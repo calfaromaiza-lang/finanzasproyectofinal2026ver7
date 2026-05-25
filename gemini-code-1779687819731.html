@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Poli Plásticos Peninsular — Dashboard de Finanzas Operativas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  
+  <style>
+    :root {
+      --bg-main: #0b132b;
+      --bg-side: #1c2541;
+      --bg-card: #222d4f;
+      --border-color: #3a506b;
+      --text-main: #ffffff;
+      --text-muted: #afb3c1;
+      --accent-cyan: #00b4d8;
+      --accent-blue: #0077b6;
+      --accent-green: #06d6a0;
+      --accent-red: #ef476f;
+      --accent-yellow: #ffd166;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      display: flex;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Sidebar Navigation */
+    .sidebar {
+      width: 280px;
+      background-color: var(--bg-side);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-content: column;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 100;
+    }
+
+    .sidebar-brand {
+      padding: 24px;
+      font-size: 1.1rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--accent-cyan);
+    }
+
+    .sidebar-menu {
+      list-style: none;
+      padding: 16px 0;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .menu-section {
+      padding: 12px 24px 6px 24px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+    }
+
+    .sidebar-item {
+      padding: 12px 24px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      transition: all 0.2s ease;
+    }
+
+    .sidebar-item:hover, .sidebar-item.active {
+      color: var(--text-main);
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .sidebar-item.active {
+      border-left: 4px solid var(--accent-cyan);
+      background-color: rgba(0, 180, 216, 0.1);
+    }
+
+    /* Main Content Container */
+    .main-content {
+      margin-left: 280px;
+      flex: 1;
+      padding: 40px;
+      min-width: 0;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Headers & Typography */
+    h1 { font-size: 2.2rem; font-weight: 800; margin-bottom: 8px; }
+    h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 20px; color: var(--accent-cyan); }
+    h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; }
+    p { color: var(--text-muted); line-height: 1.6; margin-bottom: 24px; font-size: 0.95rem; }
+
+    /* Grid Layouts & Cards */
+    .grid-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .card-kpi {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .card-kpi .title { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .card-kpi .value { font-size: 1.8rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+    .card-kpi .subtext { font-size: 0.8rem; color: var(--accent-green); }
+    .card-kpi .subtext.negative { color: var(--accent-red); }
+
+    .grid-2col {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+      gap: 32px;
+      margin-bottom: 32px;
+    }
+
+    .panel {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 32px;
+    }
+
+    /* Data Tables Styling */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      margin-top: 16px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      text-align: left;
+    }
+
+    th {
+      background-color: var(--bg-side);
+      color: var(--text-main);
+      padding: 14px 16px;
+      font-weight: 600;
+      border-bottom: 2px solid var(--border-color);
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-muted);
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background-color: rgba(255, 255, 255, 0.02); color: var(--text-main); }
+
+    .num {
+      text-align: right;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .bold-row {
+      font-weight: 700;
+      background-color: rgba(255, 255, 255, 0.03);
+    }
+    .bold-row td { color: var(--text-main); }
+
+    .indent { padding-left: 32px; }
+
+    /* Highlights & Badges */
+    .badge {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-red { background-color: rgba(239, 71, 111, 0.15); color: var(--accent-red); }
+    .badge-green { background-color: rgba(6, 214, 160, 0.15); color: var(--accent-green); }
+
+    /* Chart Container */
+    .chart-box {
+      width: 100%;
+      height: 380px;
+      position: relative;
+      margin-top: 16px;
+    }
+
+    /* Project Cover Special Style */
+    .cover-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      min-height: 70vh;
+      border: 1px dashed var(--border-color);
+      border-radius: 16px;
+      background: radial-gradient(circle at top right, rgba(0,180,216,0.05), transparent);
+      padding: 40px;
+    }
+    .cover-title { font-size: 3rem; font-weight: 800; margin-bottom: 16px; color: #fff; }
+    .cover-subtitle { font-size: 1.4rem; color: var(--accent-cyan); font-weight: 600; margin-bottom: 40px; }
+    .cover-meta { font-size: 1rem; color: var(--text-muted); display: grid; gap: 12px; max-width: 500px; text-align: left; background: var(--bg-side); padding: 24px; border-radius: 8px; border: 1px solid var(--border-color); }
+  </style>
+</head>
+<body>
+
+  <nav class="sidebar">
+    <div class="sidebar-brand">
+      <i class="fa-solid fa-industry"></i>
+      <span>Poli Plásticos Peninsular</span>
+    </div>
+    <ul class="sidebar-menu">
+      <li class="sidebar-item active" data-target="portada"><i class="fa-solid fa-folder-open"></i> Portada</li>
+      <div class="menu-section">Diagnóstico Operativo</div>
+      <li class="sidebar-item" data-target="industria"><i class="fa-solid fa-align-left"></i> Entendimiento de Industria</li>
+      <li class="sidebar-item" data-target="ajustes"><i class="fa-solid fa-sliders"></i> Ajustes Financieros</li>
+      <li class="sidebar-item" data-target="cce"><i class="fa-solid fa-arrow-rotate-right"></i> Ciclo de Conversión (CCE)</li>
+      <li class="sidebar-item" data-target="resultados"><i class="fa-solid fa-chart-bar"></i> Análisis Rentabilidad & Situación</li>
+      <div class="menu-section">Modelos Estáticos & Dinómicos</div>
+      <li class="sidebar-item" data-target="proy-base"><i class="fa-solid fa-chart-line"></i> Proyección Base 2026</li>
+      <li class="sidebar-item" data-target="plan-accion"><i class="fa-solid fa-lightbulb"></i> Plan de Acción Propuesto</li>
+      <li class="sidebar-item" data-target="proy-plan"><i class="fa-solid fa-chart-area"></i> Proyección Plan 2026</li>
+      <li class="sidebar-item" data-target="eerr-proforma"><i class="fa-solid fa-table"></i> EERR Mensual Proforma</li>
+      <div class="menu-section">Conclusiones</div>
+      <li class="sidebar-item" data-target="takeaways"><i class="fa-solid fa-clipboard-check"></i> Takeaways & Riesgos</li>
+    </ul>
+  </nav>
+
+  <main class="main-content">
+
+    <div id="portada" class="tab-content active">
+      <div class="cover-container">
+        <h1 class="cover-title">Planeación Financiera</h1>
+        <div class="cover-subtitle">Proyecto Semestral de Finanzas Operativas</div>
+        <div class="cover-meta">
+          <div><strong>Caso de Estudio:</strong> Fábrica de Envases Plásticos (Poli Plásticos Peninsular SA de CV)</div>
+          <div><strong>Tema central:</strong> Diagnóstico integral, ajuste de estados contables, evaluación del Ciclo de Conversión de Efectivo e implementación de estrategias operativas para optimización de liquidez.</div>
+          <div><strong>Plataforma de despliegue:</strong> GitHub Pages</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="industria" class="tab-content">
+      <h1>Entendimiento de la Industria</h1>
+      <p>Contexto de mercado y modelo de negocio de Poli Plásticos Peninsular SA de CV.</p>
+      
+      <div class="grid-2col">
+        <div class="panel">
+          <h3>Modelo de Negocio y Estructura Comercial</h3>
+          <p>La empresa cuenta con más de 20 años de experiencia en la fabricación de botellas PET, consolidándose como líder regional. Sin embargo, enfrenta un alto riesgo de concentración: al menos el <strong>75% de sus ventas se canalizan a un único cliente</strong> (Embotelladora Bepensa). Este cliente impone términos comerciales sumamente agresivos, liquidando sus facturas a <strong>75 días</strong>.</p>
+        </div>
+        <div class="panel">
+          <h3>Cadena de Suministro y Riesgos de Mercado</h3>
+          <p>A diferencia de su cobranza extendida, la materia prima clave se importa desde China con cotización en dólares americanos (USD). Esto expone la operación a fluctuaciones en el tipo de cambio y a ciclos fijos de trabajo que exigen eficiencia operativa absoluta sin margen de error en liquidez.</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Riesgos Críticos Identificados</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Riesgo / Desafío</th>
+              <th>Descripción Impacto Operativo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Concentración de Cartera</td><td>Dependencia crítica del 75% con un único cliente corporativo de alta exigencia crediticia.</td></tr>
+            <tr><td>Descalce de Plazos (Mismatch)</td><td>Financiamiento de inventarios y producción a corto plazo contra un retorno de efectivo diferido.</td></tr>
+            <tr><td>Riesgo Cambiario e Importación</td><td>Costos indexados al dólar que incrementan la sensibilidad y presión sobre el margen bruto.</td></tr>
+            <tr><td>Exigencia de Procesos</td><td>Altos estándares higiénicos y requerimientos de calidad duradera con ciclos de trabajo ininterrumpidos.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="ajustes" class="tab-content">
+      <h1>Ajustes a la Información Financiera (2025)</h1>
+      <p>Depuración de los saldos contables reportados bajo las premisas de la dirección para reflejar la realidad analítica operativa de la compañía.</p>
+
+      <div class="panel">
+        <h3>Balance General Ajustado Comparativo (Cifras en Pesos Mexicanos)</h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Activo</th>
+                <th class="num">2025</th>
+                <th class="num">2024</th>
+                <th>Pasivo y Capital</th>
+                <th class="num">2025</th>
+                <th class="num">2024</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="bold-row">
+                <td>Activo Circulante</td>
+                <td class="num">27,486,472.67</td>
+                <td class="num">20,027,366.06</td>
+                <td>Pasivo a CP</td>
+                <td class="num">12,377,553.21</td>
+                <td class="num">9,016,217.87</td>
+              </tr>
+              <tr>
+                <td class="indent">Efectivo y Equivalentes</td>
+                <td class="num">878,524.73</td>
+                <td class="num">449,799.48</td>
+                <td class="indent">Sueldos por Pagar</td>
+                <td class="num">169,053.02</td>
+                <td class="num">108,559.77</td>
+              </tr>
+              <tr>
+                <td class="indent">Clientes</td>
+                <td class="num">17,145,493.83</td>
+                <td class="num">11,863,195.85</td>
+                <td class="indent">Proveedores</td>
+                <td class="num">2,772,548.71</td>
+                <td class="num">1,797,850.59</td>
+              </tr>
+              <tr>
+                <td class="indent">Ctas x Cob Partes Rel. (Eliminado)</td>
+                <td class="num">0.00</td>
+                <td class="num">0.00</td>
+                <td class="indent">Ctas x Pag Partes Rel. (Eliminado)</td>
+                <td class="num">0.00</td>
+                <td class="num">0.00</td>
+              </tr>
+              <tr>
+                <td class="indent">Deudores Diversos</td>
+                <td class="num">138,800.51</td>
+                <td class="num">2,662,363.34</td>
+                <td class="indent">Impuestos por Pagar</td>
+                <td class="num">1,797,685.43</td>
+                <td class="num">1,678,013.69</td>
+              </tr>
+              <tr>
+                <td class="indent">Inventarios</td>
+                <td class="num">7,442,316.04</td>
+                <td class="num">3,760,963.37</td>
+                <td class="indent">Otros Pasivos Circulantes</td>
+                <td class="num">7,638,266.05</td>
+                <td class="num">5,431,793.82</td>
+              </tr>
+              <tr>
+                <td class="indent">Impuestos a Favor (Ajustado)</td>
+                <td class="num">1,881,337.56</td>
+                <td class="num">1,291,044.02</td>
+                <td></td>
+                <td class="num"></td>
+                <td class="num"></td>
+              </tr>
+              <tr class="bold-row">
+                <td>Activo No Circulante (Fijo Neto)</td>
+                <td class="num">7,268,928.55</td>
+                <td class="num">5,361,845.73</td>
+                <td>Pasivo Largo Plazo (Créditos)</td>
+                <td class="num">0.00</td>
+                <td class="num">0.00</td>
+              </tr>
+              <tr class="bold-row">
+                <td></td>
+                <td class="num"></td>
+                <td class="num"></td>
+                <td>Capital Contable</td>
+                <td class="num">22,377,848.01</td>
+                <td class="num text-main">16,372,993.92</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td class="num"></td>
+                <td class="num"></td>
+                <td class="indent">Capital Social</td>
+                <td class="num">51,322.26</td>
+                <td class="num">51,322.26</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td class="num"></td>
+                <td class="num"></td>
+                <td class="indent">Capital Ganado (Utilidades)</td>
+                <td class="num">22,326,525.75</td>
+                <td class="num">16,321,671.66</td>
+              </tr>
+              <tr class="bold-row">
+                <td>TOTAL ACTIVO</td>
+                <td class="num">34,755,401.22</td>
+                <td class="num">25,389,211.79</td>
+                <td>TOTAL PASIVO Y CAPITAL</td>
+                <td class="num">34,755,401.22</td>
+                <td class="num">25,389,211.79</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="cce" class="tab-content">
+      <h1>Ciclo de Conversión de Efectivo (CCE)</h1>
+      <p>Desglose analítico del tiempo promedio en días que le toma a la empresa recuperar cada peso invertido en sus operaciones ordinarias.</p>
+
+      <div class="grid-cards">
+        <div class="card-kpi">
+          <span class="title">Días de Cartera (DSO)</span>
+          <span class="value">71.53 Días</span>
+          <span class="subtext negative">Fórmula: Clientes / Ventas Diarias</span>
+        </div>
+        <div class="card-kpi">
+          <span class="title">Días de Inventario (DIO)</span>
+          <span class="value">31.05 Días</span>
+          <span class="subtext negative">Fórmula: Inventario / Ventas Diarias</span>
+        </div>
+        <div class="card-kpi">
+          <span class="title">Días de Proveedores (DPO)</span>
+          <span class="value">24.37 Días</span>
+          <span class="subtext">Fórmula: Proveedores / Costo Diario</span>
+        </div>
+        <div class="card-kpi">
+          <span class="title">Ciclo Total CCE</span>
+          <span class="value" style="color:var(--accent-cyan)">78.21 Días</span>
+          <span class="subtext negative">Fórmula: DIO + DSO - DPO</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Variables Base para el Cálculo de los Ratios Operativos</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Variable Contable Analizada</th>
+              <th class="num">Monto Registrado ($)</th>
+              <th>Impacto en la Liquidez Corriente</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Clientes (Cuentas por Cobrar)</td><td class="num">17,145,493.83</td><td>Representa financiamiento otorgado a clientes sin recibir efectivo inmediato.</td></tr>
+            <tr><td>Ventas Diarias Promedio</td><td class="num">239,697.69</td><td>Nivel de facturación promedio por jornada de la fábrica.</td></tr>
+            <tr><td>Inventario de Producto y Materia Prima</td><td class="num">7,442,316.04</td><td>Capital de trabajo inmovilizado físicamente dentro de los almacenes.</td></tr>
+            <tr><td>Proveedores (Cuentas por Pagar)</td><td class="num">2,772,548.71</td><td>Financiamiento de corto plazo recibido directamente de la cadena de suministro.</td></tr>
+            <tr><td>Costo de Ventas Diario Promedio</td><td class="num">113,763.67</td><td>Egreso diario imputable a la fabricación física de los envases.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="resultados" class="tab-content">
+      <h1>Análisis de la Rentabilidad y Estructura Financiera</h1>
+      <p>Análisis de variaciones verticales y horizontales (2024 vs 2025) y evaluación de la solvencia inmediata.</p>
+
+      <div class="grid-cards">
+        <div class="card-kpi">
+          <span class="title">Current Ratio (Liquidez)</span>
+          <span class="value">2.22 Veces</span>
+          <span class="subtext">AC cubren Pasivos CP</span>
+        </div>
+        <div class="card-kpi">
+          <span class="title">Quick Ratio (Prueba Ácida)</span>
+          <span class="value">1.62 Veces</span>
+          <span class="subtext">Capacidad de pago sin Inventario</span>
+        </div>
+        <div class="card-kpi">
+          <span class="title">Cash Ratio (Efectivo Puro)</span>
+          <span class="value">0.07 Veces</span>
+          <span class="subtext negative">Bajo nivel de caja disponible inmediato</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Estado de Resultados Comparativo (2025 vs 2024)</h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Cuenta de Resultados</th>
+                <th class="num">2025 ($)</th>
+                <th class="num">2024 ($)</th>
+                <th class="num">Diferencia ($)</th>
+                <th class="num">Var. %</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="bold-row"><td>Ventas</td><td class="num">86,291,169.25</td><td class="num">72,169,115.40</td><td class="num">14,122,053.85</td><td class="num">19.57%</td></tr>
+              <tr><td>Costo de Venta</td><td class="num">40,954,921.99</td><td class="num">35,208,347.58</td><td class="num">5,746,574.41</td><td class="num">16.32%</td></tr>
+              <tr class="bold-row"><td>Utilidad Bruta</td><td class="num">45,336,247.26</td><td class="num text-main">36,960,767.83</td><td class="num">8,375,479.43</td><td class="num">22.66%</td></tr>
+              <tr><td class="indent">Margen Bruto</td><td class="num">52.54%</td><td class="num">51.21%</td><td class="num">—</td><td class="num">—</td></tr>
+              <tr><td>Gastos de Ventas</td><td class="num">4,223,312.50</td><td class="num">2,581,513.12</td><td class="num">1,641,800.00</td><td class="num">63.60%</td></tr>
+              <tr><td>Gastos de Operación</td><td class="num">20,629,253.04</td><td class="num">13,635,566.45</td><td class="num">6,993,686.59</td><td class="num">51.29%</td></tr>
+              <tr><td>Gastos de Administración</td><td class="num">10,320,071.58</td><td class="num">7,526,205.21</td><td class="num">2,793,866.38</td><td class="num">37.12%</td></tr>
+              <tr class="bold-row"><td>SG&A's Totales</td><td class="num">35,173,077.94</td><td class="num">23,743,284.78</td><td class="num">11,429,793.16</td><td class="num">48.14%</td></tr>
+              <tr class="bold-row"><td>EBITDA</td><td class="num">10,163,169.33</td><td class="num">13,217,483.04</td><td class="num">-3,054,313.72</td><td class="num">-23.11%</td></tr>
+              <tr><td class="indent">Margen EBITDA</td><td class="num">11.78%</td><td class="num">18.31%</td><td class="num">—</td><td class="num">—</td></tr>
+              <tr><td>Depreciación y Amortización</td><td class="num">3,185,216.91</td><td class="num">2,425,656.01</td><td class="num">759,560.90</td><td class="num">31.31%</td></tr>
+              <tr class="bold-row"><td>Utilidad Operativa (EBIT)</td><td class="num">6,977,952.42</td><td class="num">10,791,827.03</td><td class="num">-3,813,874.62</td><td class="num">-35.34%</td></tr>
+              <tr><td class="indent">Margen Operativo</td><td class="num">8.09%</td><td class="num">14.95%</td><td class="num">—</td><td class="num">—</td></tr>
+              <tr><td>Resultado Integral de Financiamiento (RIF)</td><td class="num">2,696,060.69</td><td class="num">2,155,004.33</td><td class="num">541,056.36</td><td class="num">25.11%</td></tr>
+              <tr class="bold-row"><td>Utilidad Antes de Impuestos (EBT)</td><td class="num">4,281,891.73</td><td class="num">8,636,822.71</td><td class="num">-4,354,930.98</td><td class="num">-50.42%</td></tr>
+              <tr><td>Impuestos (ISR / Utilidad)</td><td class="num">1,284,567.52</td><td class="num">2,591,046.81</td><td class="num">-1,306,479.29</td><td class="num">-50.42%</td></tr>
+              <tr class="bold-row"><td>Utilidad Neta</td><td class="num">2,997,324.21</td><td class="num">6,045,775.90</td><td class="num">-3,048,451.69</td><td class="num">-50.42%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Diagnóstico Técnico Incorporado</h3>
+        <p style="font-style: italic; background-color: rgba(255, 255, 255, 0.02); padding: 16px; border-left: 3px solid var(--accent-yellow); border-radius: 4px;">
+          "Es muy importante observar que aunque las ventas crecieron un 19.57% y los activos se expandieron notablemente, la utilidad neta cayó un 50.42%. Esto obedece a un descontrol drástico en los gastos operativos y corporativos de administración (SG&A's), los cuales crecieron un 48.14%. La solvencia estática existe (Current Ratio de 2.22), pero el dinero real en bancos está estrangulado (Cash Ratio de 0.07) debido al financiamiento forzado de 75 días que otorgamos a Bepensa."
+        </p>
+      </div>
+    </div>
+
+    <div id="proy-base" class="tab-content">
+      <h1>Proyección Financiera Base 2026</h1>
+      <p>Simulación del flujo de caja mensual esperado si la compañía continúa operando bajo las condiciones de crédito e ineficiencia actuales.</p>
+
+      <div class="panel">
+        <h3>Flujos Mensuales Proyectados - Modelo de Control de Caja Base</h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Línea de Caja Base</th>
+                <th>Ene</th>
+                <th>Feb</th>
+                <th>Mar</th>
+                <th>Abr</th>
+                <th>May</th>
+                <th>Jun</th>
+                <th>Jul</th>
+                <th>Ago</th>
+                <th>Sep</th>
+                <th>Oct</th>
+                <th>Nov</th>
+                <th>Dic</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Ingresos por Cobranza</td>
+                <td class="num">11.77M</td>
+                <td class="num">7.24M</td>
+                <td class="num">8.26M</td>
+                <td class="num">6.94M</td>
+                <td class="num">7.44M</td>
+                <td class="num">3.47M</td>
+                <td class="num">5.45M</td>
+                <td class="num">5.70M</td>
+                <td class="num">8.18M</td>
+                <td class="num">8.93M</td>
+                <td class="num">12.65M</td>
+                <td class="num">10.91M</td>
+              </tr>
+              <tr>
+                <td>Egresos Totales Operación</td>
+                <td class="num">11.37M</td>
+                <td class="num">8.02M</td>
+                <td class="num">8.24M</td>
+                <td class="num">4.89M</td>
+                <td class="num">6.14M</td>
+                <td class="num">6.15M</td>
+                <td class="num">8.24M</td>
+                <td class="num">8.39M</td>
+                <td class="num">10.51M</td>
+                <td class="num">10.51M</td>
+                <td class="num">12.39M</td>
+                <td class="num">7.99M</td>
+              </tr>
+              <tr>
+                <td>Servicio a la Deuda</td>
+                <td class="num">622K</td>
+                <td class="num">622K</td>
+                <td class="num">622K</td>
+                <td class="num">622K</td>
+                <td class="num">622K</td>
+                <td class="num">622K</td>
+                <td class="num">622K</td>
+                <td class="num">622K</td>
+                <td class="num">622K</td>
+                <td class="num">622K</td>
+                <td class="num">622K</td>
+                <td class="num">622K</td>
+              </tr>
+              <tr class="bold-row" style="color: var(--accent-red)">
+                <td>Saldo Final de Bancos</td>
+                <td class="num">-478,808</td>
+                <td class="num">-1,836,141</td>
+                <td class="num">-2,384,495</td>
+                <td class="num">-919,641</td>
+                <td class="num">-209,470</td>
+                <td class="num">-3,469,233</td>
+                <td class="num">-5,995,155</td>
+                <td class="num">-8,898,554</td>
+                <td class="num">-11,823,336</td>
+                <td class="num">-14,003,856</td>
+                <td class="num">-14,339,760</td>
+                <td class="num">-12,033,330</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel">
+        <p><span class="badge badge-red"><i class="fa-solid fa-triangle-exclamation"></i> ALERTA DE LIQUIDEZ</span> La proyección base demuestra que la compañía caerá en un **déficit acumulado crítico** a partir del primer mes del año, cerrando diciembre de 2026 con un saldo negativo en bancos de **-$12,033,330.00**. Esto haría inviable la subsistencia de la fábrica.</p>
+      </div>
+    </div>
+
+    <div id="plan-accion" class="tab-content">
+      <h1>Plan de Acción Estratégico</h1>
+      <p>Decisiones de reingeniería de costos y políticas de crédito acordadas para rescatar la viabilidad de Poli Plásticos Peninsular.</p>
+
+      <div class="grid-2col">
+        <div class="panel">
+          <h3>1. Optimización Estructural de Egresos</h3>
+          <ul>
+            <li><strong>Energía Limpia:</strong> Compra e instalación de paneles solares con una inversión total de **$7,500,000.00** financiados a 12 meses sin intereses ($625,000 mensuales). Esto desploma el gasto corriente de electricidad de la fábrica a solo **$30,000.00** mensuales.</li>
+            <li><strong>Reestructuración de Consultoría:</strong> Remoción total del servicio externo de consultoría administrativa ($350,000 mensuales), delegando responsabilidades a un colaborador interno capacitado mediante un bono complementario de **$15,000.00** mensuales.</li>
+            <li><strong>Consultoría Financiera Eficiente:</strong> Sustitución del proveedor previo por una nueva firma con un honorario cerrado de **$40,000.00** al mes.</li>
+          </ul>
+        </div>
+
+        <div class="panel">
+          <h3>2. Reconfiguración de Crédito e Impuestos</h3>
+          <ul>
+            <li><strong>Descuento por Pronto Pago (Pronto Alivio):</strong> La aceleración de la cobranza incrementa la participación de la cartera liquidada a 15 días del **25% al 45%**, reduciendo el segmento pesado de 75 días del **75% al 55%**.</li>
+            <li><strong>Consultoría Fiscal:</strong> Contratación de servicios especializados para optimizar la carga fiscal, logrando reducir el Coeficiente de Utilidad (CU) al **15%**.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div id="proy-plan" class="tab-content">
+      <h1>Proyección Financiera con Plan de Acción</h1>
+      <p>Simulación analítica de los saldos bancarios una vez aplicadas las eficiencias energéticas, administrativas y la reconfiguración del crédito.</p>
+
+      <div class="panel">
+        <h3>Comparativa de Saldos Finales de Bancos 2026 (Base vs Plan de Acción)</h3>
+        <div class="chart-box">
+          <canvas id="chart-comparativo"></canvas>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Flujos Mensuales Optimizados con Plan de Acción</h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Línea de Caja (Con Plan)</th>
+                <th>Ene</th>
+                <th>Feb</th>
+                <th>Mar</th>
+                <th>Abr</th>
+                <th>May</th>
+                <th>Jun</th>
+                <th>Jul</th>
+                <th>Ago</th>
+                <th>Sep</th>
+                <th>Oct</th>
+                <th>Nov</th>
+                <th>Dic</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Cobranza Recuperada</td>
+                <td class="num">12.46M</td>
+                <td class="num">8.64M</td>
+                <td class="num">9.46M</td>
+                <td class="num">6.77M</td>
+                <td class="num">5.70M</td>
+                <td class="num">4.45M</td>
+                <td class="num">6.73M</td>
+                <td class="num">7.24M</td>
+                <td class="num">10.55M</td>
+                <td class="num">11.18M</td>
+                <td class="num">15.23M</td>
+                <td class="num">11.64M</td>
+              </tr>
+              <tr>
+                <td>Egresos Optimizados</td>
+                <td class="num">11.58M</td>
+                <td class="num">8.36M</td>
+                <td class="num">8.41M</td>
+                <td class="num">5.42M</td>
+                <td class="num">4.42M</td>
+                <td class="num">6.23M</td>
+                <td class="num">7.65M</td>
+                <td class="num">8.22M</td>
+                <td class="num">10.83M</td>
+                <td class="num">10.82M</td>
+                <td class="num text-main">13.12M</td>
+                <td class="num">8.63M</td>
+              </tr>
+              <tr class="bold-row">
+                <td>Saldo Final Optimizado</td>
+                <td class="num" style="color:var(--accent-green)">261,194</td>
+                <td class="num" style="color:var(--accent-red)">-356,137</td>
+                <td class="num" style="color:var(--accent-red)">-380,216</td>
+                <td class="num" style="color:var(--accent-green)">232,855</td>
+                <td class="num" style="color:var(--accent-green)">606,995</td>
+                <td class="num" style="color:var(--accent-red)">-1,929,754</td>
+                <td class="num" style="color:var(--accent-red)">-3,613,851</td>
+                <td class="num" style="color:var(--accent-red)">-5,417,413</td>
+                <td class="num" style="color:var(--accent-red)">-6,607,255</td>
+                <td class="num" style="color:var(--accent-red)">-7,251,306</td>
+                <td class="num" style="color:var(--accent-red)">-6,070,587</td>
+                <td class="num" style="color:var(--accent-red)">-4,053,608</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="eerr-proforma" class="tab-content">
+      <h1>Estado de Resultados Mensual Proforma 2026</h1>
+      <p>Cifras exactas mensuales de la rentabilidad esperada para el ejercicio proforma 2026 en pesos mexicanos.</p>
+
+      <div class="panel">
+        <h3>EERR Proforma Mensual 2026 (Estructura de Margen Constante y Gastos Reducidos)</h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr class="bold-row">
+                <th>Cuenta / Rubro</th>
+                <th>Ene / Feb / Mar</th>
+                <th>Abr</th>
+                <th>May / Jun</th>
+                <th>Jul</th>
+                <th>Ago</th>
+                <th>Sep / Oct</th>
+                <th>Nov</th>
+                <th>Dic</th>
+                <th>Total 2026</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="bold-row"><td>Ventas</td><td class="num">8,269,570.39</td><td class="num">2,977,045.34</td><td class="num">4,961,742.23</td><td class="num">6,946,439.13</td><td class="num">7,938,787.57</td><td class="num">11,908,181.36</td><td class="num">14,885,226.70</td><td class="num">7,938,787.57</td><td class="num">99,234,844.64</td></tr>
+              <tr><td>Costo de Venta</td><td class="num">4,344,723.70</td><td class="num">1,564,100.53</td><td class="num">2,606,834.22</td><td class="num">3,649,567.91</td><td class="num">4,170,934.75</td><td class="num">6,256,402.12</td><td class="num">7,820,502.65</td><td class="num">4,170,934.75</td><td class="num">52,136,523.01</td></tr>
+              <tr class="bold-row"><td>Utilidad Bruta</td><td class="num">3,924,846.69</td><td class="num">1,412,944.81</td><td class="num">2,354,908.01</td><td class="num">3,296,871.22</td><td class="num">3,767,852.82</td><td class="num">5,651,779.24</td><td class="num">7,064,724.05</td><td class="num">3,767,852.82</td><td class="num">47,098,321.63</td></tr>
+              <tr><td>Gastos Fijos Reducidos</td><td class="num">3,572,413.43</td><td class="num text-muted">2,372,513.43</td><td class="num">2,372,513.43</td><td class="num">2,372,513.43</td><td class="num">2,372,513.43</td><td class="num">2,372,513.43</td><td class="num">2,372,513.43</td><td class="num">2,372,513.43</td><td class="num">29,661,311.16</td></tr>
+              <tr><td>Depreciación Paneles</td><td class="num">290,434.74</td><td class="num">290,434.74</td><td class="num">290,434.74</td><td class="num">290,434.74</td><td class="num">290,434.74</td><td class="num">290,434.74</td><td class="num">290,434.74</td><td class="num">290,434.74</td><td class="num">3,485,216.91</td></tr>
+              <tr class="bold-row"><td>Utilidad Operativa</td><td class="num">61,898.51</td><td class="num" style="color:var(--accent-red)">-1,250,003.37</td><td class="num" style="color:var(--accent-red)">-308,040.16</td><td class="num">633,923.04</td><td class="num">1,104,904.65</td><td class="num">2,988,831.06</td><td class="num">4,401,775.87</td><td class="num">1,104,904.65</td><td class="num">13,942,782.17</td></tr>
+              <tr class="bold-row"><td>Utilidad Neta Anual</td><td colspan="8" class="text-muted" style="text-align: center;">Cálculo Acumulado Ejercicio Fiscal 2026</td><td class="num" style="color:var(--accent-green)">9,763,822.45</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="takeaways" class="tab-content">
+      <h1>Takeaways y Gestión de Riesgos</h1>
+      <p>Puntos vitales para la ejecución exitosa del plan de negocios planteado para la evaluación ordinaria.</p>
+
+      <div class="panel">
+        <h3>Conclusiones Clave del Proyecto Financiero</h3>
+        <p>1. **Rentabilidad vs Liquidez:** Queda demostrado de manera contundente que una empresa puede ser altamente rentable en su Estado de Resultados (generando **$9,763,822.45** de Utilidad Neta en el plan optimizado) y aun así quebrar por insolvencia si sus plazos de cobranza de efectivo (71.53 días en promedio con Bepensa) superan drásticamente la velocidad de pago exigida por sus costos y proveedores.</p>
+        <p>2. **Control Estricto de Gastos Corporativos:** La reingeniería aplicada al eliminar consultorías externas redundantes e implementar infraestructura solar demuestra que la optimización de los costos fijos genera el colchón necesario para estabilizar los flujos operativos mensuales.</p>
+        <p>3. **Riesgos de Desviación Futura:** Cualquier retraso adicional en la cadena de cobranza con Bepensa, o una fluctuación alcista en el precio del PET importado de China debido al tipo de cambio USD/MXN, generará desviaciones directas que requerirán la aportación inmediata del capital de reserva discutido por la dirección ($800,000).</p>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const items = document.querySelectorAll('.sidebar-item');
+      const tabs = document.querySelectorAll('.tab-content');
+
+      items.forEach(item => {
+        item.addEventListener('click', () => {
+          // Desactivar ítems previos
+          items.forEach(i => i.classList.remove('active'));
+          tabs.forEach(t => t.classList.remove('active'));
+
+          // Activar seleccionado
+          item.classList.add('active');
+          const target = item.getAttribute('data-target');
+          const targetTab = document.getElementById(target);
+          if (targetTab) {
+            targetTab.classList.add('active');
+          }
+
+          // Inicializar gráfico si se entra a la pestaña de proyecciones plan
+          if (target === 'proy-plan') {
+            initChart();
+          }
+        });
+      });
+
+      // Variable para evitar duplicados de gráficos en renderizado continuo
+      let comparativoChart = null;
+
+      function initChart() {
+        const ctx = document.getElementById('chart-comparativo');
+        if (!ctx) return;
+        
+        if (comparativoChart) {
+          comparativoChart.destroy();
+        }
+
+        const mesesLabels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        
+        // Cifras exactas extraídas directamente de los modelos de simulación del Excel provisto
+        const datosBase = [-478808, -1836141, -2384495, -919641, -209740, -3469233, -5995155, -8898554, -11823336, -14003856, -14339760, -12033330];
+        const datosPlan = [261194, -356137, -380216, 232855, 606995, -1929754, -3613851, -5417413, -6607255, -7251306, -6070587, -4053608];
+
+        comparativoChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: mesesLabels,
+            datasets: [
+              {
+                label: 'Simulación Sin Plan de Acción (Efectivo Base)',
+                data: datosBase,
+                borderColor: '#ef476f',
+                backgroundColor: 'rgba(239, 71, 111, 0.1)',
+                borderWidth: 3,
+                tension: 0.2,
+                fill: true
+              },
+              {
+                label: 'Simulación Con Plan de Acción (Efectivo Optimizado)',
+                data: datosPlan,
+                borderColor: '#06d6a0',
+                backgroundColor: 'rgba(6, 214, 160, 0.1)',
+                borderWidth: 3,
+                tension: 0.2,
+                fill: true
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                labels: { color: '#ffffff', font: { family: 'Plus Jakarta Sans', size: 12 } }
+              }
+            },
+            scales: {
+              x: {
+                grid: { color: '#3a506b' },
+                ticks: { color: '#afb3c1', font: { family: 'Plus Jakarta Sans' } }
+              },
+              y: {
+                grid: { color: '#3a506b' },
+                ticks: { color: '#afb3c1', font: { family: 'JetBrains Mono' } }
+              }
+            }
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>
